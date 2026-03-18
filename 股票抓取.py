@@ -1,6 +1,7 @@
 import yfinance as yf
 import pyodbc
 import time
+import random
 from datetime import datetime
 
 # 🔌 資料庫連線
@@ -34,13 +35,28 @@ def save_stock(stock_id):
 
     conn.commit()
 
-# 🔁 每35秒存一次
+# 🔁 平日隨機間隔抓取，只在指定時間範圍執行
 while True:
-    try:
-        save_stock("2330.TW")
-        save_stock("2345.TW")
+    now = datetime.now()
+    # 平日判斷：0=Monday, 1=Tuesday, ..., 6=Sunday
+    if now.weekday() < 5:  # 週一到週五
+        # 設定抓取時間範圍（這裡示範 14:47 ~ 14:48，可改成你要的）
+        start_time = now.replace(hour=15, minute=1, second=0, microsecond=0)
+        end_time = now.replace(hour=15, minute=4, second=0, microsecond=0)
 
-    except Exception as e:
-        print("錯誤:", e)
+        if start_time <= now < end_time:
+            try:
+                save_stock("2330.TW")
+                save_stock("2345.TW")
+            except Exception as e:
+                print("錯誤:", e)
 
-    time.sleep(35)
+            # 🔹 隨機間隔 2~10 秒
+            interval = random.uniform(2, 10)
+            time.sleep(interval)
+        else:
+            # 非抓取時間，休眠60秒再檢查
+            time.sleep(60)
+    else:
+        # 週末，休眠1小時再檢查
+        time.sleep(3600)
